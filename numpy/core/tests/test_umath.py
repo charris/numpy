@@ -1543,7 +1543,7 @@ class TestSpecialMethods(TestCase):
     def test_ufunc_override(self):
 
         class A(object):
-            def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
                 return self, func, method, pos, inputs, kwargs
 
         a = A()
@@ -1579,23 +1579,23 @@ class TestSpecialMethods(TestCase):
         four_mul_ufunc = np.frompyfunc(quatro_mul, 4, 1)
 
         class A(object):
-            def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
                 return "A"
 
         class ASub(A):
-            def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
                 return "ASub"
 
         class B(object):
-            def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
                 return "B"
 
         class C(object):
-            def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
                 return NotImplemented
 
         class CSub(object):
-            def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
                 return NotImplemented
 
         a = A()
@@ -1659,7 +1659,7 @@ class TestSpecialMethods(TestCase):
     def test_ufunc_override_methods(self):
 
         class A(object):
-            def __numpy_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
                 return self, ufunc, method, pos, inputs, kwargs
 
         # __call__
@@ -1763,11 +1763,11 @@ class TestSpecialMethods(TestCase):
     def test_ufunc_override_out(self):
 
         class A(object):
-            def __numpy_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
                 return kwargs
 
         class B(object):
-            def __numpy_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
                 return kwargs
 
         a = A()
@@ -1797,7 +1797,7 @@ class TestSpecialMethods(TestCase):
     def test_ufunc_override_exception(self):
 
         class A(object):
-            def __numpy_ufunc__(self, *a, **kwargs):
+            def __array_ufunc__(self, *a, **kwargs):
                 raise ValueError("oops")
 
         a = A()
