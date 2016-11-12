@@ -1543,8 +1543,8 @@ class TestSpecialMethods(TestCase):
     def test_ufunc_override(self):
 
         class A(object):
-            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
-                return self, func, method, pos, inputs, kwargs
+            def __array_ufunc__(self, func, method, inputs, **kwargs):
+                return self, func, method, inputs, kwargs
 
         a = A()
         b = np.matrix([1])
@@ -1558,12 +1558,10 @@ class TestSpecialMethods(TestCase):
         assert_equal(res1[1], np.dot)
         assert_equal(res0[2], '__call__')
         assert_equal(res1[2], '__call__')
-        assert_equal(res0[3], 0)
-        assert_equal(res1[3], 0)
-        assert_equal(res0[4], (a, b))
-        assert_equal(res1[4], (a, b))
-        assert_equal(res0[5], {})
-        assert_equal(res1[5], {})
+        assert_equal(res0[3], (a, b))
+        assert_equal(res1[3], (a, b))
+        assert_equal(res0[4], {})
+        assert_equal(res1[4], {})
 
     def test_ufunc_override_mro(self):
 
@@ -1579,23 +1577,23 @@ class TestSpecialMethods(TestCase):
         four_mul_ufunc = np.frompyfunc(quatro_mul, 4, 1)
 
         class A(object):
-            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, inputs, **kwargs):
                 return "A"
 
         class ASub(A):
-            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, inputs, **kwargs):
                 return "ASub"
 
         class B(object):
-            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, inputs, **kwargs):
                 return "B"
 
         class C(object):
-            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, inputs, **kwargs):
                 return NotImplemented
 
         class CSub(object):
-            def __array_ufunc__(self, func, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, func, method, inputs, **kwargs):
                 return NotImplemented
 
         a = A()
@@ -1659,8 +1657,8 @@ class TestSpecialMethods(TestCase):
     def test_ufunc_override_methods(self):
 
         class A(object):
-            def __array_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
-                return self, ufunc, method, pos, inputs, kwargs
+            def __array_ufunc__(self, ufunc, method, inputs, **kwargs):
+                return self, ufunc, method, inputs, kwargs
 
         # __call__
         a = A()
@@ -1668,18 +1666,16 @@ class TestSpecialMethods(TestCase):
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], '__call__')
-        assert_equal(res[3], 1)
-        assert_equal(res[4], (1, a))
-        assert_equal(res[5], {'foo': 'bar', 'answer': 42})
+        assert_equal(res[3], (1, a))
+        assert_equal(res[4], {'foo': 'bar', 'answer': 42})
 
         # reduce, positional args
         res = np.multiply.reduce(a, 'axis0', 'dtype0', 'out0', 'keep0')
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], 'reduce')
-        assert_equal(res[3], 0)
-        assert_equal(res[4], (a,))
-        assert_equal(res[5], {'dtype':'dtype0',
+        assert_equal(res[3], (a,))
+        assert_equal(res[4], {'dtype':'dtype0',
                                'out': 'out0',
                                'keepdims': 'keep0',
                                'axis': 'axis0'})
@@ -1690,9 +1686,8 @@ class TestSpecialMethods(TestCase):
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], 'reduce')
-        assert_equal(res[3], 0)
-        assert_equal(res[4], (a,))
-        assert_equal(res[5], {'dtype':'dtype0',
+        assert_equal(res[3], (a,))
+        assert_equal(res[4], {'dtype':'dtype0',
                                'out': 'out0',
                                'keepdims': 'keep0',
                                'axis': 'axis0'})
@@ -1702,9 +1697,8 @@ class TestSpecialMethods(TestCase):
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], 'accumulate')
-        assert_equal(res[3], 0)
-        assert_equal(res[4], (a,))
-        assert_equal(res[5], {'dtype':'dtype0',
+        assert_equal(res[3], (a,))
+        assert_equal(res[4], {'dtype':'dtype0',
                                'out': 'out0',
                                'axis': 'axis0'})
 
@@ -1714,9 +1708,8 @@ class TestSpecialMethods(TestCase):
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], 'accumulate')
-        assert_equal(res[3], 0)
-        assert_equal(res[4], (a,))
-        assert_equal(res[5], {'dtype':'dtype0',
+        assert_equal(res[3], (a,))
+        assert_equal(res[4], {'dtype':'dtype0',
                                'out': 'out0',
                                'axis': 'axis0'})
 
@@ -1725,9 +1718,8 @@ class TestSpecialMethods(TestCase):
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], 'reduceat')
-        assert_equal(res[3], 0)
-        assert_equal(res[4], (a, [4, 2]))
-        assert_equal(res[5], {'dtype':'dtype0',
+        assert_equal(res[3], (a, [4, 2]))
+        assert_equal(res[4], {'dtype':'dtype0',
                                'out': 'out0',
                                'axis': 'axis0'})
 
@@ -1737,9 +1729,8 @@ class TestSpecialMethods(TestCase):
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], 'reduceat')
-        assert_equal(res[3], 0)
-        assert_equal(res[4], (a, [4, 2]))
-        assert_equal(res[5], {'dtype':'dtype0',
+        assert_equal(res[3], (a, [4, 2]))
+        assert_equal(res[4], {'dtype':'dtype0',
                                'out': 'out0',
                                'axis': 'axis0'})
 
@@ -1748,26 +1739,24 @@ class TestSpecialMethods(TestCase):
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], 'outer')
-        assert_equal(res[3], 0)
-        assert_equal(res[4], (a, 42))
-        assert_equal(res[5], {})
+        assert_equal(res[3], (a, 42))
+        assert_equal(res[4], {})
 
         # at
         res = np.multiply.at(a, [4, 2], 'b0')
         assert_equal(res[0], a)
         assert_equal(res[1], np.multiply)
         assert_equal(res[2], 'at')
-        assert_equal(res[3], 0)
-        assert_equal(res[4], (a, [4, 2], 'b0'))
+        assert_equal(res[3], (a, [4, 2], 'b0'))
 
     def test_ufunc_override_out(self):
 
         class A(object):
-            def __array_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, ufunc, method, inputs, **kwargs):
                 return kwargs
 
         class B(object):
-            def __array_ufunc__(self, ufunc, method, pos, inputs, **kwargs):
+            def __array_ufunc__(self, ufunc, method, inputs, **kwargs):
                 return kwargs
 
         a = A()
