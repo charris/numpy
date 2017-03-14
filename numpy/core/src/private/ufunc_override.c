@@ -11,6 +11,8 @@ normalize___call___args(PyUFuncObject *ufunc, PyObject *args,
                     int nin)
 {
     /* ufunc.__call__(*args, **kwds) */
+    int i;
+    int not_all_none;
     int nargs = PyTuple_GET_SIZE(args);
     PyObject *obj = PyDict_GetItemString(*normal_kwds, "sig");
 
@@ -25,11 +27,13 @@ normalize___call___args(PyUFuncObject *ufunc, PyObject *args,
 
     /* If we have more args than nin, they must be the output variables.*/
     if (nargs > nin) {
-        if ((nargs - nin) == 1) {
-            obj = PyTuple_GET_ITEM(args, nargs - 1);
-            PyDict_SetItemString(*normal_kwds, "out", obj);
+        for (i=nin; i < nargs; i++) {
+            not_all_none = (PyTuple_GET_ITEM(args, i) != Py_None);
+            if (not_all_none) {
+                break;
+            }
         }
-        else {
+        if (not_all_none) {
             obj = PyTuple_GetSlice(args, nin, nargs);
             PyDict_SetItemString(*normal_kwds, "out", obj);
             Py_DECREF(obj);
@@ -46,12 +50,13 @@ normalize_reduce_args(PyUFuncObject *ufunc, PyObject *args,
     int i;
     PyObject *obj;
 
-    for (i = 0; i < nargs; i++) {
+    *normal_args = PyTuple_GetSlice(args, 0, 1);
+    for (i = 1; i < nargs; i++) {
         obj = PyTuple_GET_ITEM(args, i);
-        if (i == 0) {
-            *normal_args = PyTuple_GetSlice(args, 0, 1);
+        if (obj == Py_None) {
+            continue;
         }
-        else if (i == 1) {
+        if (i == 1) {
             /* axis */
             PyDict_SetItemString(*normal_kwds, "axis", obj);
         }
@@ -61,7 +66,9 @@ normalize_reduce_args(PyUFuncObject *ufunc, PyObject *args,
         }
         else if (i == 3) {
             /* out */
+            obj = PyTuple_GetSlice(args, 3, 4);
             PyDict_SetItemString(*normal_kwds, "out", obj);
+            Py_DECREF(obj);
         }
         else {
             /* keepdims */
@@ -80,12 +87,13 @@ normalize_accumulate_args(PyUFuncObject *ufunc, PyObject *args,
     int i;
     PyObject *obj;
 
-    for (i = 0; i < nargs; i++) {
+    *normal_args = PyTuple_GetSlice(args, 0, 1);
+    for (i = 1; i < nargs; i++) {
         obj = PyTuple_GET_ITEM(args, i);
-        if (i == 0) {
-            *normal_args = PyTuple_GetSlice(args, 0, 1);
+        if (obj == Py_None) {
+            continue;
         }
-        else if (i == 1) {
+        if (i == 1) {
             /* axis */
             PyDict_SetItemString(*normal_kwds, "axis", obj);
         }
@@ -95,7 +103,9 @@ normalize_accumulate_args(PyUFuncObject *ufunc, PyObject *args,
         }
         else {
             /* out */
+            obj = PyTuple_GetSlice(args, 3, 4);
             PyDict_SetItemString(*normal_kwds, "out", obj);
+            Py_DECREF(obj);
         }
     }
     return;
@@ -110,17 +120,15 @@ normalize_reduceat_args(PyUFuncObject *ufunc, PyObject *args,
     int nargs = PyTuple_GET_SIZE(args);
     PyObject *obj;
 
-    for (i = 0; i < nargs; i++) {
+    /* a and indicies */
+    *normal_args = PyTuple_GetSlice(args, 0, 2);
+
+    for (i = 2; i < nargs; i++) {
         obj = PyTuple_GET_ITEM(args, i);
-        if (i == 0) {
-            /* a and indicies */
-            *normal_args = PyTuple_GetSlice(args, 0, 2);
-        }
-        else if (i == 1) {
-            /* Handled above, when i == 0. */
+        if (obj == Py_None) {
             continue;
         }
-        else if (i == 2) {
+        if (i == 2) {
             /* axis */
             PyDict_SetItemString(*normal_kwds, "axis", obj);
         }
@@ -130,7 +138,9 @@ normalize_reduceat_args(PyUFuncObject *ufunc, PyObject *args,
         }
         else {
             /* out */
+            obj = PyTuple_GetSlice(args, 4, 5);
             PyDict_SetItemString(*normal_kwds, "out", obj);
+            Py_DECREF(obj);
         }
     }
     return;
@@ -263,6 +273,30 @@ PyUFunc_CheckOverride(PyUFuncObject *ufunc, char *method,
     /* Build new kwds */
     if (kwds && PyDict_CheckExact(kwds)) {
         normal_kwds = PyDict_Copy(kwds);
+        /* ensure out is always a tuple */
+        PyObject *out = PyDict_GetItemString(normal_kwds, "out");
+        if (out != NULL) {
+            if(PyTuple_Check(out)) {
+                int all_none;
+                int i;
+                for (i==0; i<PyTuple_GET_SIZE(out); i++) {
+                    all_none = (PyTuple_GET_ITEM(out, i) == Py_None);
+                    if (!all_none) {
+                        break;
+                    }
+                }
+                if(all_none){
+                    PyDict_DelItemString(normal_kwds, "out");
+                }
+            }
+            else if (out != Py_None) {  /* not already a tuple and not None */
+                PyObject *out_tuple = PyTuple_New(1);
+                Py_INCREF(out);  /* was borrowed ref; make it permanent */
+                PyTuple_SET_ITEM(out_tuple, 0, out); /* steals reference */
+                PyDict_SetItemString(normal_kwds, "out", out_tuple);
+                Py_DECREF(out_tuple);
+            }
+        }
     }
     else {
         normal_kwds = PyDict_New();
@@ -306,12 +340,26 @@ PyUFunc_CheckOverride(PyUFuncObject *ufunc, char *method,
         goto fail;
     }
 
+    Py_ssize_t len = PyTuple_GET_SIZE(normal_args);
+    PyObject *override_args = PyTuple_New(len + 2);
+    if (override_args == NULL) {
+        goto fail;
+    }
+    Py_INCREF(ufunc);
+    PyTuple_SET_ITEM(override_args, 0, ufunc);  /* steals reference */
+    Py_INCREF(method_name);
+    PyTuple_SET_ITEM(override_args, 1, method_name);
+    for (i = 0; i < len; i++) {
+        PyObject *item = PyTuple_GET_ITEM(normal_args, i);
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(override_args, i + 2, item);
+    }
+    Py_DECREF(normal_args);
     /*
      * Call __array_ufunc__ functions in correct order
      */
     while (1) {
         PyObject *array_ufunc;
-        PyObject *override_args;
         PyObject *override_obj;
 
         override_obj = NULL;
@@ -360,22 +408,15 @@ PyUFunc_CheckOverride(PyUFuncObject *ufunc, char *method,
             goto fail;
         }
 
-	/* If None, try next one (i.e., as if it returned NotImplemented) */
+        /* If None, try next one (i.e., as if it returned NotImplemented) */
         if (array_ufunc == Py_None) {
             Py_DECREF(array_ufunc);
             continue;
         }
 
-        override_args = Py_BuildValue("OOO", ufunc, method_name, normal_args);
-        if (override_args == NULL) {
-            Py_DECREF(array_ufunc);
-            goto fail;
-        }
-
         *result = PyObject_Call(array_ufunc, override_args, normal_kwds);
 
         Py_DECREF(array_ufunc);
-        Py_DECREF(override_args);
 
         if (*result == NULL) {
             /* Exception occurred */
@@ -394,13 +435,13 @@ PyUFunc_CheckOverride(PyUFuncObject *ufunc, char *method,
 
     /* Override found, return it. */
     Py_XDECREF(method_name);
-    Py_XDECREF(normal_args);
     Py_XDECREF(normal_kwds);
+    Py_DECREF(override_args);
     return 0;
 
 fail:
     Py_XDECREF(method_name);
-    Py_XDECREF(normal_args);
     Py_XDECREF(normal_kwds);
+    Py_DECREF(override_args);
     return 1;
 }
