@@ -282,8 +282,6 @@ this, :class:`ndarray` has its own ``__array_ufunc__`` method,
 equivalent to::
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-        out = kwargs.pop('out', None)
-
         # Handle items of type(self), superclasses, and items
         # without __array_ufunc__. Bail out in other cases.
         for item in inputs:
@@ -298,7 +296,7 @@ equivalent to::
         result = getattr(ufunc, method)(*items, **kwargs)
 
         # Cast output to type(self), unless `out` specified
-        if out is not None:
+        if kwargs['out']:
             return result
 
         if isinstance(result, tuple):
