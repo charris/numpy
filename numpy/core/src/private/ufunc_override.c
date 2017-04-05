@@ -339,7 +339,7 @@ PyUFunc_CheckOverride(PyUFuncObject *ufunc, char *method,
 {
     int i;
     int j;
-    int status = 0;
+    int status;
 
     int noa;
     PyObject *with_override[NPY_MAXARGS];
@@ -469,6 +469,13 @@ PyUFunc_CheckOverride(PyUFuncObject *ufunc, char *method,
     /* ufunc.at */
     else if (strcmp(method, "at") == 0) {
         status = normalize_at_args(ufunc, args, &normal_args, &normal_kwds);
+    }
+    /* unknown method */
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "Internal Numpy error: unknown ufunc method '%s' in call "
+                     "to PyUFunc_CheckOverride", method);
+        status = -1;
     }
     if (status != 0) {
         Py_XDECREF(normal_args);
