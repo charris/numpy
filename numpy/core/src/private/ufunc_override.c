@@ -339,7 +339,7 @@ PyUFunc_CheckOverride(PyUFuncObject *ufunc, char *method,
 {
     int i;
     int j;
-    int status;
+    int status = 0;
 
     int noa;
     PyObject *with_override[NPY_MAXARGS];
