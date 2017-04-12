@@ -5,7 +5,7 @@ from __future__ import division, absolute_import, print_function
 
 import operator
 
-import numpy as np
+from numpy.core import umath as um
 
 __all__ = ['NDArrayOperatorsMixin']
 
@@ -59,43 +59,46 @@ def _unary_method(ufunc):
 class NDArrayOperatorsMixin(object):
     """Implements all special methods using __array_ufunc__.
 
-    Caveats: the rarely used `divmod` (``__divmod__``) and unary `+`
-    (``__pos__``) operators do not have corresponding ufuncs. Hence this mixin
-    passes the builtin functions ``divmod`` and ``operator.pos`` to
-    ``__array_ufunc__`` instead of true ufuncs. If you inherit from this mixin,
-    your implementation needs to be able to handle this or you should override
-    these methods.
+    Caveats:
+    (1) The rarely used `divmod` (``__divmod__``) and unary `+` (``__pos__``)
+        operators do not have corresponding ufuncs. Hence this mixin passes the
+        builtin functions ``divmod`` and ``operator.pos`` to ``__array_ufunc__``
+        instead of true ufuncs. If you inherit from this mixin, your
+        implementation needs to be able to handle this or you should override
+        these methods.
+    (2) This mixin doesn't define ``__matmul__``, ``__rmatmul__`` and
+        ``__imatmul__``, because ``np.matmul`` is not a ufunc, and hence does
+        not call ``__array_ufunc__``.
     """
 
     # comparisons don't have reflected and in-place versions
-    __lt__ = _binary_method(np.less)
-    __le__ = _binary_method(np.less_equal)
-    __eq__ = _binary_method(np.equal)
-    __ne__ = _binary_method(np.not_equal)
-    __gt__ = _binary_method(np.greater)
-    __ge__ = _binary_method(np.greater_equal)
+    __lt__ = _binary_method(um.less)
+    __le__ = _binary_method(um.less_equal)
+    __eq__ = _binary_method(um.equal)
+    __ne__ = _binary_method(um.not_equal)
+    __gt__ = _binary_method(um.greater)
+    __ge__ = _binary_method(um.greater_equal)
 
     # numeric methods
-    __add__, __radd__, __iadd__ = _numeric_methods(np.add)
-    __sub__, __rsub__, __isub__ = _numeric_methods(np.subtract)
-    __mul__, __rmul__, __imul__ = _numeric_methods(np.multiply)
-    __matmul__, __rmatmul__, __imatmul__ = _numeric_methods(np.matmul)
-    __div__, __rdiv__, __idiv__ = _numeric_methods(np.divide)  # Python 2 only
-    __truediv__, __rtruediv__, __itruediv__ = _numeric_methods(np.true_divide)
+    __add__, __radd__, __iadd__ = _numeric_methods(um.add)
+    __sub__, __rsub__, __isub__ = _numeric_methods(um.subtract)
+    __mul__, __rmul__, __imul__ = _numeric_methods(um.multiply)
+    __div__, __rdiv__, __idiv__ = _numeric_methods(um.divide)  # Python 2 only
+    __truediv__, __rtruediv__, __itruediv__ = _numeric_methods(um.true_divide)
     __floordiv__, __rfloordiv__, __ifloordiv__ = _numeric_methods(
-        np.floor_divide)
-    __mod__, __rmod__, __imod__ = _numeric_methods(np.mod)
+        um.floor_divide)
+    __mod__, __rmod__, __imod__ = _numeric_methods(um.mod)
     __divmod__, __rdivmod__, __idivmod__ = _numeric_methods(divmod)
     # TODO: handle the optional third argument for __pow__?
-    __pow__, __rpow__, __ipow__ = _numeric_methods(np.power)
-    __lshift__, __rlshift__, __ilshift__ = _numeric_methods(np.left_shift)
-    __rshift__, __rrshift__, __irshift__ = _numeric_methods(np.right_shift)
-    __and__, __rand__, __iand__ = _numeric_methods(np.logical_and)
-    __xor__, __rxor__, __ixor__ = _numeric_methods(np.logical_xor)
-    __or__, __ror__, __ior__ = _numeric_methods(np.logical_or)
+    __pow__, __rpow__, __ipow__ = _numeric_methods(um.power)
+    __lshift__, __rlshift__, __ilshift__ = _numeric_methods(um.left_shift)
+    __rshift__, __rrshift__, __irshift__ = _numeric_methods(um.right_shift)
+    __and__, __rand__, __iand__ = _numeric_methods(um.logical_and)
+    __xor__, __rxor__, __ixor__ = _numeric_methods(um.logical_xor)
+    __or__, __ror__, __ior__ = _numeric_methods(um.logical_or)
 
     # unary methods
-    __neg__ = _unary_method(np.negative)
+    __neg__ = _unary_method(um.negative)
     __pos__ = _unary_method(operator.pos)
-    __abs__ = _unary_method(np.absolute)
-    __invert__ = _unary_method(np.invert)
+    __abs__ = _unary_method(um.absolute)
+    __invert__ = _unary_method(um.invert)

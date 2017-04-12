@@ -75,8 +75,8 @@ class TestNDArrayOperatorsMixin(TestCase):
 
         x = ArrayLike(1)
         o = OptOut()
-        assert_(isinstance(x + o), OptOut)
-        assert_(isinstance(o + x), OptOut)
+        assert_(isinstance(x + o, OptOut))
+        assert_(isinstance(o + x, OptOut))
 
     def test_subclass(self):
 
