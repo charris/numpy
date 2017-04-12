@@ -3,6 +3,7 @@ from __future__ import division, absolute_import, print_function
 import numbers
 import operator
 import sys
+import warnings
 
 import numpy as np
 from numpy.testing import (
@@ -190,11 +191,16 @@ class TestNDArrayOperatorsMixin(TestCase):
         if PY2:
             operators.append(operator.div)
 
-        for op in operators:
-            expected = ArrayLike(op(array, 1))
-            actual = op(array_like, 1)
-            err_msg = 'failed for operator {}'.format(op)
-            _assert_equal_type_and_value(expected, actual, err_msg=err_msg)
+        with warnings.catch_warnings():
+            # ignore warnings from operator.div when run with python -3
+            warnings.filterwarnings('ignore', 'classic int division',
+                                    DeprecationWarning)
+
+            for op in operators:
+                expected = ArrayLike(op(array, 1))
+                actual = op(array_like, 1)
+                err_msg = 'failed for operator {}'.format(op)
+                _assert_equal_type_and_value(expected, actual, err_msg=err_msg)
 
 
 if __name__ == "__main__":
