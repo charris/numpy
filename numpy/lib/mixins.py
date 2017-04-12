@@ -62,10 +62,10 @@ class NDArrayOperatorsMixin(object):
     Caveats:
     (1) The rarely used `divmod` (``__divmod__``) and unary `+` (``__pos__``)
         operators do not have corresponding ufuncs. Hence this mixin passes the
-        builtin functions ``divmod`` and ``operator.pos`` to ``__array_ufunc__``
-        instead of true ufuncs. If you inherit from this mixin, your
-        implementation needs to be able to handle this or you should override
-        these methods.
+        builtin functions ``divmod`` and ``operator.pos`` to
+        ``__array_ufunc__`` instead of true ufuncs. If you inherit from this
+        mixin, your implementation needs to be able to handle this or you
+        should override these methods.
     (2) This mixin doesn't define ``__matmul__``, ``__rmatmul__`` and
         ``__imatmul__``, because ``np.matmul`` is not a ufunc, and hence does
         not call ``__array_ufunc__``.

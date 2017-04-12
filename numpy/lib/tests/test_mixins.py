@@ -2,10 +2,14 @@ from __future__ import division, absolute_import, print_function
 
 import numbers
 import operator
+import sys
 
 import numpy as np
 from numpy.testing import (
     TestCase, run_module_suite, assert_, assert_equal, assert_raises)
+
+
+PY2 = sys.version_info[0] < 3
 
 
 class ArrayLike(np.NDArrayOperatorsMixin):
@@ -59,9 +63,11 @@ class ArrayLike(np.NDArrayOperatorsMixin):
         return '%s(%r)' % (type(self).__name__, self.value)
 
 
-def _assert_equal_type_and_value(result, expected):
-    assert_equal(type(result), type(expected))
-    assert_equal(result.value, expected.value)
+def _assert_equal_type_and_value(result, expected, err_msg=None):
+    assert_equal(type(result), type(expected), err_msg=err_msg)
+    assert_equal(result.value, expected.value, err_msg=err_msg)
+    assert_equal(getattr(result.value, 'dtype', None),
+                 getattr(expected.value, 'dtype', None), err_msg=err_msg)
 
 
 class TestNDArrayOperatorsMixin(TestCase):
@@ -151,7 +157,44 @@ class TestNDArrayOperatorsMixin(TestCase):
         _assert_equal_type_and_value(x + y, y)
         _assert_equal_type_and_value(y + x, y)
 
-    # TODO(shoyer): test every operator to ensure it's properly implemented
+    def test_unary_methods(self):
+        array = np.array([-1, 0, 1, 2])
+        array_like = ArrayLike(array)
+        for op in [operator.neg, operator.pos, abs, operator.invert]:
+            _assert_equal_type_and_value(op(array_like), ArrayLike(op(array)))
+
+    def test_binary_methods(self):
+        array = np.array([-1, 0, 1, 2])
+        array_like = ArrayLike(array)
+        operators = [
+            operator.lt,
+            operator.le,
+            operator.eq,
+            operator.ne,
+            operator.gt,
+            operator.ge,
+            operator.add,
+            operator.sub,
+            operator.mul,
+            operator.truediv,
+            operator.floordiv,
+            operator.mod,
+            # divmod is handled separately above
+            pow,
+            operator.lshift,
+            operator.rshift,
+            operator.and_,
+            operator.xor,
+            operator.or_,
+        ]
+        if PY2:
+            operators.append(operator.div)
+
+        for op in operators:
+            expected = ArrayLike(op(array, 1))
+            actual = op(array_like, 1)
+            err_msg = 'failed for operator {}'.format(op)
+            _assert_equal_type_and_value(expected, actual, err_msg=err_msg)
 
 
 if __name__ == "__main__":
