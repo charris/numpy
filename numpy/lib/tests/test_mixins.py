@@ -10,7 +10,7 @@ from numpy.testing import (
     TestCase, run_module_suite, assert_, assert_equal, assert_raises)
 
 
-PY2 = sys.version_info[0] < 3
+PY2 = sys.version_info.major < 3
 
 
 class ArrayLike(np.NDArrayOperatorsMixin):
@@ -57,7 +57,7 @@ class ArrayLike(np.NDArrayOperatorsMixin):
             # one return value
             return type(self)(result)
         else:
-            # no return return value, e.g., ufunc.at
+            # no return value, e.g., ufunc.at
             return None
 
     def __repr__(self):
@@ -91,7 +91,7 @@ class TestNDArrayOperatorsMixin(TestCase):
         check(np.array(0) + ArrayLike(np.array(0)))
 
     def test_divmod(self):
-        # divmod is subtle: it's returns a tuple
+        # divmod is subtle: its returns a tuple
 
         def check(result):
             assert_(type(result) is tuple)

@@ -4,6 +4,7 @@ Mixin classes for writing custom array types that don't inherit from ndarray.
 from __future__ import division, absolute_import, print_function
 
 import operator
+import sys
 
 from numpy.core import umath as um
 
@@ -83,7 +84,9 @@ class NDArrayOperatorsMixin(object):
     __add__, __radd__, __iadd__ = _numeric_methods(um.add)
     __sub__, __rsub__, __isub__ = _numeric_methods(um.subtract)
     __mul__, __rmul__, __imul__ = _numeric_methods(um.multiply)
-    __div__, __rdiv__, __idiv__ = _numeric_methods(um.divide)  # Python 2 only
+    if sys.version_info.major < 3:
+        # Python 3 uses only __truediv__ and __floordiv__
+        __div__, __rdiv__, __idiv__ = _numeric_methods(um.divide)
     __truediv__, __rtruediv__, __itruediv__ = _numeric_methods(um.true_divide)
     __floordiv__, __rfloordiv__, __ifloordiv__ = _numeric_methods(
         um.floor_divide)
