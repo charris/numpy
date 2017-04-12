@@ -93,9 +93,9 @@ class NDArrayOperatorsMixin(object):
     __pow__, __rpow__, __ipow__ = _numeric_methods(um.power)
     __lshift__, __rlshift__, __ilshift__ = _numeric_methods(um.left_shift)
     __rshift__, __rrshift__, __irshift__ = _numeric_methods(um.right_shift)
-    __and__, __rand__, __iand__ = _numeric_methods(um.logical_and)
-    __xor__, __rxor__, __ixor__ = _numeric_methods(um.logical_xor)
-    __or__, __ror__, __ior__ = _numeric_methods(um.logical_or)
+    __and__, __rand__, __iand__ = _numeric_methods(um.bitwise_and)
+    __xor__, __rxor__, __ixor__ = _numeric_methods(um.bitwise_xor)
+    __or__, __ror__, __ior__ = _numeric_methods(um.bitwise_or)
 
     # unary methods
     __neg__ = _unary_method(um.negative)
