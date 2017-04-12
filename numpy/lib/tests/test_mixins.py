@@ -1,9 +1,11 @@
 from __future__ import division, absolute_import, print_function
 
 import numbers
+import operator
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_, assert_equal
+from numpy.testing import (
+    TestCase, run_module_suite, assert_, assert_equal, assert_raises)
 
 
 class ArrayLike(np.NDArrayOperatorsMixin):
@@ -24,8 +26,6 @@ class ArrayLike(np.NDArrayOperatorsMixin):
     def __init__(self, value):
         self.value = np.asarray(value)
 
-    # __array_priority__ = 1000  # for legacy reasons
-
     _handled_types = (np.ndarray, numbers.Number)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
@@ -44,22 +44,74 @@ class ArrayLike(np.NDArrayOperatorsMixin):
             kwargs['out'] = tuple(x.value if isinstance(self, type(x)) else x
                                   for x in out)
         result = getattr(ufunc, method)(*inputs, **kwargs)
-        if isinstance(result, tuple):
+
+        if type(result) is tuple:
+            # multiple return values
             return tuple(type(self)(x) for x in result)
-        else:
+        elif result is not None:
+            # one return value
             return type(self)(result)
+        else:
+            # no return return value, e.g., ufunc.at
+            return None
 
     def __repr__(self):
         return '%s(%r)' % (type(self).__name__, self.value)
 
 
+def _assert_equal_type_and_value(result, expected):
+    assert_equal(type(result), type(expected))
+    assert_equal(result.value, expected.value)
+
+
 class TestNDArrayOperatorsMixin(TestCase):
 
-    def test_array_like(self):
+    def test_array_like_add(self):
 
-        x = ArrayLike(1)
-        assert_(isinstance(x + 1, ArrayLike))
-        assert_equal((x + 1).value, 2)
+        def check(result):
+            _assert_equal_type_and_value(result, ArrayLike(0))
+
+        check(ArrayLike(0) + 0)
+        check(0 + ArrayLike(0))
+
+        check(ArrayLike(0) + np.array(0))
+        check(np.array(0) + ArrayLike(0))
+
+        check(ArrayLike(np.array(0)) + 0)
+        check(0 + ArrayLike(np.array(0)))
+
+        check(ArrayLike(np.array(0)) + np.array(0))
+        check(np.array(0) + ArrayLike(np.array(0)))
+
+    def test_divmod(self):
+        # divmod is subtle: it's returns a tuple
+
+        def check(result):
+            assert_(type(result) is tuple)
+            assert_equal(len(result), 2)
+            _assert_equal_type_and_value(result[0], ArrayLike(1))
+            _assert_equal_type_and_value(result[1], ArrayLike(0))
+
+        check(divmod(ArrayLike(2), 2))
+        check(divmod(2, ArrayLike(2)))
+
+        check(divmod(ArrayLike(2), np.array(2)))
+        check(divmod(np.array(2), ArrayLike(2)))
+
+        check(divmod(ArrayLike(np.array(2)), 2))
+        check(divmod(2, ArrayLike(np.array(2))))
+
+        check(divmod(ArrayLike(np.array(2)), np.array(2)))
+        check(divmod(np.array(2), ArrayLike(np.array(2))))
+
+    def test_inplace(self):
+        array_like = ArrayLike(np.array([0]))
+        array_like += 1
+        _assert_equal_type_and_value(array_like, ArrayLike(np.array([1])))
+
+        array = np.array([0])
+        array += ArrayLike(1)
+        _assert_equal_type_and_value(array, ArrayLike(np.array([1])))
 
     def test_opt_out(self):
 
@@ -73,29 +125,33 @@ class TestNDArrayOperatorsMixin(TestCase):
             def __radd__(self, other):
                 return self
 
-        x = ArrayLike(1)
-        o = OptOut()
-        assert_(isinstance(x + o, OptOut))
-        assert_(isinstance(o + x, OptOut))
+        array_like = ArrayLike(1)
+        opt_out = OptOut()
+
+        # supported operations
+        assert_(array_like + opt_out is opt_out)
+        assert_(opt_out + array_like is opt_out)
+
+        # not supported
+        with assert_raises(TypeError):
+            # don't use the Python default, array_like = array_like + opt_out
+            array_like += opt_out
+        with assert_raises(TypeError):
+            array_like - opt_out
+        with assert_raises(TypeError):
+            opt_out - array_like
 
     def test_subclass(self):
 
         class SubArrayLike(ArrayLike):
             """Should take precedence over ArrayLike."""
 
-        # TODO
+        x = ArrayLike(0)
+        y = SubArrayLike(1)
+        _assert_equal_type_and_value(x + y, y)
+        _assert_equal_type_and_value(y + x, y)
 
-    def test_ndarray(self):
-        pass
-
-    def test_ndarray_subclass(self):
-        pass
-
-    def test_out(self):
-        pass
-
-    def test_all_operators(self):
-        pass
+    # TODO(shoyer): test every operator to ensure it's properly implemented
 
 
 if __name__ == "__main__":
