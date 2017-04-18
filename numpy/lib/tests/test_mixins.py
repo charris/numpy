@@ -41,6 +41,7 @@ class ArrayLike(np.NDArrayOperatorsMixin):
             # handle _handled_types and superclass instances
             if not (isinstance(x, self._handled_types) or
                     isinstance(self, type(x))):
+                print('not implemented', type(x))
                 return NotImplemented
 
         inputs = tuple(x.value if isinstance(self, type(x)) else x
@@ -53,11 +54,11 @@ class ArrayLike(np.NDArrayOperatorsMixin):
         if type(result) is tuple:
             # multiple return values
             return tuple(type(self)(x) for x in result)
-        elif result is not None:
+        elif method != 'at':
             # one return value
             return type(self)(result)
         else:
-            # no return value, e.g., ufunc.at
+            # no return value
             return None
 
     def __repr__(self):
@@ -89,27 +90,6 @@ class TestNDArrayOperatorsMixin(TestCase):
 
         check(ArrayLike(np.array(0)) + np.array(0))
         check(np.array(0) + ArrayLike(np.array(0)))
-
-    def test_divmod(self):
-        # divmod is subtle: its returns a tuple
-
-        def check(result):
-            assert_(type(result) is tuple)
-            assert_equal(len(result), 2)
-            _assert_equal_type_and_value(result[0], ArrayLike(1))
-            _assert_equal_type_and_value(result[1], ArrayLike(0))
-
-        check(divmod(ArrayLike(2), 2))
-        check(divmod(2, ArrayLike(2)))
-
-        check(divmod(ArrayLike(2), np.array(2)))
-        check(divmod(np.array(2), ArrayLike(2)))
-
-        check(divmod(ArrayLike(np.array(2)), 2))
-        check(divmod(2, ArrayLike(np.array(2))))
-
-        check(divmod(ArrayLike(np.array(2)), np.array(2)))
-        check(divmod(np.array(2), ArrayLike(np.array(2))))
 
     def test_inplace(self):
         array_like = ArrayLike(np.array([0]))
@@ -161,7 +141,10 @@ class TestNDArrayOperatorsMixin(TestCase):
     def test_unary_methods(self):
         array = np.array([-1, 0, 1, 2])
         array_like = ArrayLike(array)
-        for op in [operator.neg, operator.pos, abs, operator.invert]:
+        for op in [operator.neg,
+                   # pos is not yet implemented
+                   abs,
+                   operator.invert]:
             _assert_equal_type_and_value(op(array_like), ArrayLike(op(array)))
 
     def test_binary_methods(self):
@@ -179,8 +162,9 @@ class TestNDArrayOperatorsMixin(TestCase):
             operator.mul,
             operator.truediv,
             operator.floordiv,
+            # TODO: test div on Python 2, only
             operator.mod,
-            # divmod is handled separately above
+            # divmod is not yet implemented
             pow,
             operator.lshift,
             operator.rshift,
@@ -188,19 +172,27 @@ class TestNDArrayOperatorsMixin(TestCase):
             operator.xor,
             operator.or_,
         ]
-        if PY2:
-            operators.append(operator.div)
+        for op in operators:
+            expected = ArrayLike(op(array, 1))
+            actual = op(array_like, 1)
+            err_msg = 'failed for operator {}'.format(op)
+            _assert_equal_type_and_value(expected, actual, err_msg=err_msg)
 
-        with warnings.catch_warnings():
-            # ignore warnings from operator.div when run with python -3
-            warnings.filterwarnings('ignore', 'classic int division',
-                                    DeprecationWarning)
+    def test_ufunc_at(self):
+        array = ArrayLike(np.array([1, 2, 3, 4]))
+        assert_(np.negative.at(array, np.array([0, 1])) is None)
+        _assert_equal_type_and_value(array, ArrayLike([-1, -2, 3, 4]))
 
-            for op in operators:
-                expected = ArrayLike(op(array, 1))
-                actual = op(array_like, 1)
-                err_msg = 'failed for operator {}'.format(op)
-                _assert_equal_type_and_value(expected, actual, err_msg=err_msg)
+    def test_ufunc_two_outputs(self):
+        def check(result):
+            assert_(type(result) is tuple)
+            assert_equal(len(result), 2)
+            mantissa, exponent = np.frexp(2 ** -3)
+            _assert_equal_type_and_value(result[0], ArrayLike(mantissa))
+            _assert_equal_type_and_value(result[1], ArrayLike(exponent))
+
+        check(np.frexp(ArrayLike(2 ** -3)))
+        check(np.frexp(ArrayLike(np.array(2 ** -3))))
 
 
 if __name__ == "__main__":

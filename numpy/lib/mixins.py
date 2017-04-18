@@ -1,9 +1,7 @@
-"""
-Mixin classes for writing custom array types that don't inherit from ndarray.
+"""Mixin classes for custom array types that don't inherit from ndarray.
 """
 from __future__ import division, absolute_import, print_function
 
-import operator
 import sys
 
 from numpy.core import umath as um
@@ -58,18 +56,12 @@ def _unary_method(ufunc):
 
 
 class NDArrayOperatorsMixin(object):
-    """Implements all special methods using __array_ufunc__.
+    """Implements (almost) all special methods using __array_ufunc__.
 
-    Caveats:
-    (1) The rarely used `divmod` (``__divmod__``) and unary `+` (``__pos__``)
-        operators do not have corresponding ufuncs. Hence this mixin passes the
-        builtin functions ``divmod`` and ``operator.pos`` to
-        ``__array_ufunc__`` instead of true ufuncs. If you inherit from this
-        mixin, your implementation needs to be able to handle this or you
-        should override these methods.
-    (2) This mixin doesn't define ``__matmul__``, ``__rmatmul__`` and
-        ``__imatmul__``, because ``np.matmul`` is not a ufunc, and hence does
-        not call ``__array_ufunc__``.
+    Caveats: this class does not implement the special operators corresponding
+    to `divmod`, unary `+` or `matmul` (`@`), because these operation does not
+    have corresponding NumPy ufuncs. If you need these operations, you will
+    need to implement them yourself.
     """
 
     # comparisons don't have reflected and in-place versions
@@ -91,7 +83,6 @@ class NDArrayOperatorsMixin(object):
     __floordiv__, __rfloordiv__, __ifloordiv__ = _numeric_methods(
         um.floor_divide)
     __mod__, __rmod__, __imod__ = _numeric_methods(um.mod)
-    __divmod__, __rdivmod__, __idivmod__ = _numeric_methods(divmod)
     # TODO: handle the optional third argument for __pow__?
     __pow__, __rpow__, __ipow__ = _numeric_methods(um.power)
     __lshift__, __rlshift__, __ilshift__ = _numeric_methods(um.left_shift)
@@ -102,6 +93,5 @@ class NDArrayOperatorsMixin(object):
 
     # unary methods
     __neg__ = _unary_method(um.negative)
-    __pos__ = _unary_method(operator.pos)
     __abs__ = _unary_method(um.absolute)
     __invert__ = _unary_method(um.invert)
