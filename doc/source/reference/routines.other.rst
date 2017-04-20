@@ -32,6 +32,13 @@ Memory ranges
    shares_memory
    may_share_memory
 
+Array mixins
+------------
+.. autosummary::
+   :toctree: generated/
+
+   NDArrayOperatorsMixin
+
 NumPy version comparison
 ------------------------
 .. autosummary::

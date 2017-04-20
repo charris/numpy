@@ -58,10 +58,9 @@ def _unary_method(ufunc):
 class NDArrayOperatorsMixin(object):
     """Implements (almost) all special methods using __array_ufunc__.
 
-    Caveats: this class does not implement the special operators corresponding
-    to `divmod`, unary `+` or `matmul` (`@`), because these operation does not
-    have corresponding NumPy ufuncs. If you need these operations, you will
-    need to implement them yourself.
+    This class does not yet implement the special operators corresponding
+    to `divmod`, unary `+` or `matmul` (`@`), because these operation do not yet
+    have corresponding NumPy ufuncs.
     """
 
     # comparisons don't have reflected and in-place versions
