@@ -1,5 +1,4 @@
-"""Mixin classes for custom array types that don't inherit from ndarray.
-"""
+"""Mixin classes for custom array types that don't inherit from ndarray."""
 from __future__ import division, absolute_import, print_function
 
 import sys
