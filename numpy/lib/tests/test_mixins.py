@@ -12,14 +12,15 @@ from numpy.testing import (
 PY2 = sys.version_info.major < 3
 
 
-# NOTE: This class is an exact copy of the example from docstring for
-# NDArrayOperatorsMixin
+# NOTE: This class should be kept as an exact copy of the example from the
+# docstring for NDArrayOperatorsMixin.
 
 class ArrayLike(np.lib.mixins.NDArrayOperatorsMixin):
     def __init__(self, value):
         self.value = np.asarray(value)
 
-    # We might also consider adding the built-in list type to this list
+    # One might also consider adding the built-in list type to this
+    # list, to support operations like np.add(array_like, list)
     _HANDLED_TYPES = (np.ndarray, numbers.Number)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):

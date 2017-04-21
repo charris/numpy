@@ -61,17 +61,18 @@ class NDArrayOperatorsMixin(object):
 
     This class implements the special methods for almost all of Python's
     builtin operators defined in the `operator` module, including comparisons
-    (==, >, etc.) and arithmetic (+, *, -, etc.), by deferring to a
-    __array_ufunc__ method.
+    (``==``, ``>``, etc.) and arithmetic (``+``, ``*``, ``-``, etc.), by
+    deferring to the ``__array_ufunc__`` method, which subclasses must
+    implement.
 
     This class does not yet implement the special operators corresponding
-    to `divmod`, unary `+` or `matmul` (`@`), because these operation do not
-    yet have corresponding NumPy ufuncs.
+    to ``divmod``, unary ``+`` or ``matmul`` (``@``), because these operation
+    do not yet have corresponding NumPy ufuncs.
 
     It is useful for writing classes that do not inherit from `numpy.ndarray`,
     but that should support arithmetic and numpy universal functions like
-    arrays as described in `A Mechanism for Overriding Ufuncs
-    <neps.ufunc-overides>`_.
+    arrays as described in :ref:`A Mechanism for Overriding Ufuncs
+    <neps.ufunc-overrides>`.
 
     As an trivial example, consider this implementation of an ``ArrayLike``
     class that simply wraps a NumPy array and ensures that the result of any
@@ -81,7 +82,8 @@ class NDArrayOperatorsMixin(object):
             def __init__(self, value):
                 self.value = np.asarray(value)
 
-            # We might also consider adding the built-in list type to this list
+            # One might also consider adding the built-in list type to this
+            # list, to support operations like np.add(array_like, list)
             _HANDLED_TYPES = (np.ndarray, numbers.Number)
 
             def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):

@@ -1,3 +1,5 @@
+.. _neps.ufunc-overrides:
+
 =================================
 A Mechanism for Overriding Ufuncs
 =================================
