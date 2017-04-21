@@ -6,7 +6,8 @@ import sys
 
 from numpy.core import umath as um
 
-__all__ = ['NDArrayOperatorsMixin']
+# None of this module should be exposed in top-level NumPy module.
+__all__ = []
 
 
 def _binary_method(ufunc):
@@ -56,11 +57,80 @@ def _unary_method(ufunc):
 
 
 class NDArrayOperatorsMixin(object):
-    """Implements (almost) all special methods using __array_ufunc__.
+    """Mixin defining all operator special methods using __array_ufunc__.
+
+    This class implements the special methods for almost all of Python's
+    builtin operators defined in the `operator` module, including comparisons
+    (==, >, etc.) and arithmetic (+, *, -, etc.), by deferring to a
+    __array_ufunc__ method.
 
     This class does not yet implement the special operators corresponding
-    to `divmod`, unary `+` or `matmul` (`@`), because these operation do not yet
-    have corresponding NumPy ufuncs.
+    to `divmod`, unary `+` or `matmul` (`@`), because these operation do not
+    yet have corresponding NumPy ufuncs.
+
+    It is useful for writing classes that do not inherit from `numpy.ndarray`,
+    but that should support arithmetic and numpy universal functions like
+    arrays as described in `A Mechanism for Overriding Ufuncs
+    <neps.ufunc-overides>`_.
+
+    As an trivial example, consider this implementation of an ``ArrayLike``
+    class that simply wraps a NumPy array and ensures that the result of any
+    arithmetic operation is also an ``ArrayLike`` object::
+
+        class ArrayLike(np.lib.mixins.NDArrayOperatorsMixin):
+            def __init__(self, value):
+                self.value = np.asarray(value)
+
+            # We might also consider adding the built-in list type to this list
+            _HANDLED_TYPES = (np.ndarray, numbers.Number)
+
+            def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+                out = kwargs.get('out', ())
+                for x in inputs + out:
+                    # Only support operations with instances of _HANDLED_TYPES
+                    # and superclass instances of this type
+                    if not (isinstance(x, self._HANDLED_TYPES) or
+                            isinstance(self, type(x))):
+                        return NotImplemented
+
+                # Defer to the implementation of the ufunc on unwrapped values
+                inputs = tuple(x.value if isinstance(self, type(x)) else x
+                               for x in inputs)
+                if out:
+                    kwargs['out'] = tuple(
+                        x.value if isinstance(self, type(x)) else x
+                        for x in out)
+                result = getattr(ufunc, method)(*inputs, **kwargs)
+
+                if type(result) is tuple:
+                    # multiple return values
+                    return tuple(type(self)(x) for x in result)
+                elif method == 'at':
+                    # no return value
+                    return None
+                else:
+                    # one return value
+                    return type(self)(result)
+
+            def __repr__(self):
+                return '%s(%r)' % (type(self).__name__, self.value)
+
+    In interactions between ``ArrayLike`` objects and numbers or numpy arrays,
+    the result is always another ``ArrayLike``:
+
+        >>> x = ArrayLike([1, 2, 3])
+        >>> x - 1
+        ArrayLike(array([0, 1, 2]))
+        >>> 1 - x
+        ArrayLike(array([ 0, -1, -2]))
+        >>> np.arange(3) - x
+        ArrayLike(array([-1, -1, -1]))
+        >>> x - np.arange(3)
+        ArrayLike(array([1, 1, 1]))
+
+    Note that unlike ``numpy.ndarray``, ``ArrayLike`` does not allow operations
+    with arbitrary, unrecognized types. This ensures that interactions with
+    ArrayLike preserve a well-defined casting hierarchy.
     """
 
     # comparisons don't have reflected and in-place versions

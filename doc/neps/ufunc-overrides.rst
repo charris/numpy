@@ -577,8 +577,8 @@ make more sense to ask classes like ``MyObject`` to implement a full
 ``__array_ufunc__`` [6]_. In the end, allowing classes to opt out was
 preferred, and the above reasoning led us to agree on a similar
 implementation for :class:`ndarray` itself. To help implement array-like
-classes, the mixin class :class:`~numpy.NDArrayOperatorsMixin` provides
-overrides for all binary operators with corresponding ufuncs.
+classes, the mixin class :class:`~numpy.lib.mixins.NDArrayOperatorsMixin`
+provides overrides for all binary operators with corresponding ufuncs.
 
 
 Future extensions to other functions

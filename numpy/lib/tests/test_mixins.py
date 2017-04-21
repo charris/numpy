@@ -12,59 +12,43 @@ from numpy.testing import (
 PY2 = sys.version_info.major < 3
 
 
-class ArrayLike(np.NDArrayOperatorsMixin):
-    """An array-like class that wraps NumPy arrays.
+# NOTE: This class is an exact copy of the example from docstring for
+# NDArrayOperatorsMixin
 
-    Example usage:
-
-        >>> x = ArrayLike([1, 2, 3])
-        >>> x - 1
-        ArrayLike(array([0, 1, 2]))
-        >>> 1 - x
-        ArrayLike(array([ 0, -1, -2]))
-        >>> np.arange(3) - x
-        ArrayLike(array([-1, -1, -1]))
-        >>> x - np.arange(3)
-        ArrayLike(array([1, 1, 1]))
-
-    Note that unlike numpy.ndarray, this type does not allow operations with
-    arbitrary, unrecognized types. This ensures that ArrayLike maintains a
-    well-defined casting hierarchy, as described in the NEP "A Mechanism for
-    Overriding Ufuncs".
-    """
-
+class ArrayLike(np.lib.mixins.NDArrayOperatorsMixin):
     def __init__(self, value):
         self.value = np.asarray(value)
 
     # We might also consider adding the built-in list type to this list
-    _handled_types = (np.ndarray, numbers.Number)
+    _HANDLED_TYPES = (np.ndarray, numbers.Number)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-        # ArrayLike implements arithmetic and ufuncs by deferring to the
-        # wrapped array
         out = kwargs.get('out', ())
         for x in inputs + out:
-            # handle _handled_types and superclass instances
-            if not (isinstance(x, self._handled_types) or
+            # Only support operations with instances of _HANDLED_TYPES
+            # and superclass instances of this type
+            if not (isinstance(x, self._HANDLED_TYPES) or
                     isinstance(self, type(x))):
                 return NotImplemented
 
+        # Defer to the implementation of the ufunc on unwrapped values
         inputs = tuple(x.value if isinstance(self, type(x)) else x
                        for x in inputs)
         if out:
-            kwargs['out'] = tuple(x.value if isinstance(self, type(x)) else x
-                                  for x in out)
+            kwargs['out'] = tuple(
+                x.value if isinstance(self, type(x)) else x
+                for x in out)
         result = getattr(ufunc, method)(*inputs, **kwargs)
 
         if type(result) is tuple:
             # multiple return values
             return tuple(type(self)(x) for x in result)
-        elif method != 'at':
-            # one return value
-            return type(self)(result)
-        else:
+        elif method == 'at':
             # no return value
             return None
+        else:
+            # one return value
+            return type(self)(result)
 
     def __repr__(self):
         return '%s(%r)' % (type(self).__name__, self.value)

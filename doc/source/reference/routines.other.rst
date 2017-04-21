@@ -37,7 +37,7 @@ Array mixins
 .. autosummary::
    :toctree: generated/
 
-   NDArrayOperatorsMixin
+   lib.mixins.NDArrayOperatorsMixin
 
 NumPy version comparison
 ------------------------
