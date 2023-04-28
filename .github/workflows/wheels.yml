@@ -109,7 +109,11 @@ jobs:
       - name: setup rtools for 32-bit
         run: |
           echo "PLAT=i686" >> $env:GITHUB_ENV
-          echo "PATH=$env:RTOOLS43_HOME\mingw32\bin;$env:PATH" >> $env:GITHUB_ENV
+
+          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          $env:PATH="c:\rtools40\mingw32\bin;$env:PATH"
+          refreshenv
+          echo "$env:PATH" >> $env:GITHUB_ENV
           gfortran --version
         if: ${{ matrix.buildplat[1] == 'win32' }}
 

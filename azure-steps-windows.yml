@@ -14,8 +14,8 @@ steps:
   displayName: 'Install dependencies; some are optional to avoid test skips'
 
 - powershell: |
-    choco install -y rtools
-    #choco install -y rtools --force --version=4.0.0.20220206
+    choco install -y rtools --force --version=4.0.0.20220206
+    echo "RTOOLS40_HOME="c:\\rtools40\\" >> $env:GITHUB_ENV
     refreshenv
   displayName: 'Install rtools'
 
@@ -40,11 +40,11 @@ steps:
     If ($(BITS) -eq 32) {
         $env:CFLAGS = "-m32"
         $env:LDFLAGS = "-m32"
-        $env:PATH = "$env:RTOOLS43_HOME\\mingw32\\bin;$env:PATH"
+        $env:PATH = "$env:RTOOLS40_HOME\\mingw32\\bin;$env:PATH"
     }
     Else
     {
-        $env:PATH = "$env:RTOOLS43_HOME\\mingw64\\bin;$env:PATH"
+        $env:PATH = "$env:RTOOLS40_HOME\\mingw64\\bin;$env:PATH"
     }
     If ( Test-Path env:NPY_USE_BLAS_ILP64 ) {
         $env:OPENBLAS64_ = "openblas"
@@ -68,11 +68,11 @@ steps:
     If ($(BITS) -eq 32) {
         $env:CFLAGS = "-m32"
         $env:LDFLAGS = "-m32"
-        $env:PATH = "$env:RTOOLS43_HOME\\mingw32\\bin;$env:PATH"
+        $env:PATH = "$env:RTOOLS40_HOME\\mingw32\\bin;$env:PATH"
     }
     Else
     {
-        $env:PATH = "$env:RTOOLS43_HOME\\mingw64\\bin;$env:PATH"
+        $env:PATH = "$env:RTOOLS40_HOME\\mingw64\\bin;$env:PATH"
     }
     python runtests.py -n --show-build-log --mode=$(TEST_MODE) -- -rsx --junitxml=junit/test-results.xml
   displayName: 'Run NumPy Test Suite'
