@@ -14,7 +14,7 @@ steps:
   displayName: 'Install dependencies; some are optional to avoid test skips'
 
 - powershell: |
-    choco install -y rtools
+    choco install -y rtools --force --version=4.0.0.20220206
     refreshenv
   displayName: 'Install rtools'
 
