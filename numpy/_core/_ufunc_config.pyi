@@ -1,7 +1,8 @@
 from collections.abc import Callable
-from _typeshed import SupportsWrite
 from types import TracebackType
 from typing import Any, Final, Literal, TypeAlias, TypedDict, TypeVar, type_check_only
+
+from _typeshed import SupportsWrite
 
 __all__ = [
     "seterr",
